@@ -1,46 +1,23 @@
 import React, { FC, useState } from "react";
-import styles from "./common.module.scss";
-import { Typography, Empty, Table, Tag, Button, Space, Modal } from "antd";
-import { ExclamationCircleOutlined } from '@ant-design/icons'
+import {
+  Typography,
+  Empty,
+  Table,
+  Tag,
+  Button,
+  Space,
+  Modal,
+  Spin,
+} from "antd";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { useTitle } from "ahooks";
 import ListSearch from "../../components/ListSearch";
+import styles from "./common.module.scss";
+import useLoadQuestionListData from "../../hooks/useLoadQuestionListData";
 
 const { Title } = Typography;
 const { confirm } = Modal;
 
-const rawQuestionList = [
-  {
-    _id: "q1",
-    title: "问卷1",
-    isPublished: false,
-    isStar: false,
-    answerCount: 5,
-    createAt: "3月10日 13: 23",
-  },
-  {
-    _id: "q2",
-    title: "问卷2",
-    isPublished: true,
-    isStar: true,
-    answerCount: 5,
-    createAt: "3月10日 13: 23",
-  },
-  {
-    _id: "q3",
-    title: "问卷3",
-    isPublished: false,
-    isStar: false,
-    answerCount: 5,
-    createAt: "3月10日 13: 23",
-  },
-  {
-    _id: "q4",
-    title: "问卷4",
-    isPublished: false,
-    isStar: false,
-    answerCount: 5,
-    createAt: "3月10日 13: 23",
-  },
-];
 const columns = [
   {
     title: "标题",
@@ -67,8 +44,11 @@ const columns = [
   },
 ];
 const Trash: FC = () => {
-  const [questionList, setQuestionList] = useState(rawQuestionList);
+  useTitle("回收站");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const { data = {}, loading, error } = useLoadQuestionListData({isDeleted: true});
+  const { list = [], total = 0 } = data;
 
   const rowSelection = {
     onChange: (selectedRowKeys: any[], selectedRows: any[]) => {
@@ -85,11 +65,11 @@ const Trash: FC = () => {
     confirm({
       title: "确认彻底删除该问卷?",
       icon: <ExclamationCircleOutlined />,
-      cancelText: '取消',
-      okText: '确认',
+      cancelText: "取消",
+      okText: "确认",
       onOk: () => {
-        console.log(6)  
-      }
+        console.log(6);
+      },
     });
   }
 
@@ -111,7 +91,7 @@ const Trash: FC = () => {
           ...rowSelection,
         }}
         key={"key"}
-        dataSource={questionList}
+        dataSource={list}
         columns={columns}
         pagination={false}
         rowKey={(q) => q._id}
@@ -130,9 +110,14 @@ const Trash: FC = () => {
         </div>
       </div>
       <div className={styles.content}>
+        {loading && (
+          <div style={{ textAlign: "center" }}>
+            <Spin />
+          </div>
+        )}
         {/** 问卷列表 */}
-        {questionList.length === 0 && <Empty description="暂无数据" />}
-        {questionList.length > 0 && TableElem}
+        {!loading && list.length === 0 && <Empty description="暂无数据" />}
+        {list.length > 0 && TableElem}
       </div>
     </>
   );

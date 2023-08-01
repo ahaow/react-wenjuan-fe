@@ -1,8 +1,15 @@
 import React, { FC } from "react";
-import styles from "./Home.module.scss"
+import useLoadQuestionData from "../../../hooks/useLoadQuestionData";
 
 const Edit: FC = () => {
-  return <div>home</div>;
+  const { loading, data } = useLoadQuestionData();
+  console.log('data', data)
+  return (
+    <div>
+      <p>Edit page</p>
+      {loading ? <p>loading...</p> : <p>{JSON.stringify(data)}</p>}
+    </div>
+  );
 };
 
 export default Edit;
