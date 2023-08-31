@@ -8,12 +8,18 @@ import {
   Space,
   Modal,
   Spin,
+  message,
 } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
-import { useTitle } from "ahooks";
+import { useTitle, useRequest } from "ahooks";
 import ListSearch from "../../components/ListSearch";
 import styles from "./common.module.scss";
 import useLoadQuestionListData from "../../hooks/useLoadQuestionListData";
+import ListPage from "../../components/ListPage";
+import {
+  updateQuestionService,
+  deleteQuestionService,
+} from "../../services/question";
 
 const { Title } = Typography;
 const { confirm } = Modal;
@@ -47,7 +53,12 @@ const Trash: FC = () => {
   useTitle("回收站");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const { data = {}, loading, error } = useLoadQuestionListData({isDeleted: true});
+  const {
+    data = {},
+    loading,
+    refresh,
+    error,
+  } = useLoadQuestionListData({ isDeleted: true });
   const { list = [], total = 0 } = data;
 
   const rowSelection = {
@@ -61,6 +72,36 @@ const Trash: FC = () => {
     },
   };
 
+  // 恢复
+  const { loading: recoverLoading, run: recover } = useRequest(
+    async () => {
+      for await (const id of selectedIds) {
+        updateQuestionService(id, { isDeleted: false });
+      }
+    },
+    {
+      manual: true,
+      debounceWait: 1500,
+      onSuccess() {
+        message.success("恢复成功");
+        setSelectedIds([])
+        refresh(); // 手动刷新
+      },
+    }
+  );
+
+  const { run: deleteFn } = useRequest(
+    async () => await deleteQuestionService(selectedIds),
+    {
+      manual: true,
+      onSuccess() {
+        message.success("删除成功");
+        setSelectedIds([])
+        refresh(); // 手动刷新
+      },
+    }
+  );
+
   function del() {
     confirm({
       title: "确认彻底删除该问卷?",
@@ -68,7 +109,8 @@ const Trash: FC = () => {
       cancelText: "取消",
       okText: "确认",
       onOk: () => {
-        console.log(6);
+        // console.log(6);
+        deleteFn();
       },
     });
   }
@@ -77,7 +119,11 @@ const Trash: FC = () => {
     <>
       <div style={{ marginBottom: "16px" }}>
         <Space>
-          <Button type="primary" disabled={selectedIds.length === 0}>
+          <Button
+            type="primary"
+            disabled={selectedIds.length === 0 || recoverLoading}
+            onClick={recover}
+          >
             恢复
           </Button>
           <Button danger disabled={selectedIds.length === 0} onClick={del}>
@@ -118,6 +164,9 @@ const Trash: FC = () => {
         {/** 问卷列表 */}
         {!loading && list.length === 0 && <Empty description="暂无数据" />}
         {list.length > 0 && TableElem}
+      </div>
+      <div className={styles.footer}>
+        <ListPage total={total} />
       </div>
     </>
   );

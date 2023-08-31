@@ -1,15 +1,33 @@
 import React, { FC } from "react";
-import { Typography, Space, Form, Input, Button } from "antd";
+import { Typography, Space, Form, Input, Button, message } from "antd";
 import { UserAddOutlined } from "@ant-design/icons";
+import { Link, useNavigate } from "react-router-dom";
+import { useRequest } from "ahooks";
 import styles from "./Register.module.scss";
-import { Link } from "react-router-dom";
 import { LOGIN_PATHNAME } from "../router";
+import { registerService } from "./../services/user";
 
 const { Title } = Typography;
 
 const Register: FC = () => {
+  const nav = useNavigate();
+
+  const { run: onRegister } = useRequest(
+    async (values) => {
+      const { username, password, nickname } = values;
+      await registerService(username, password, nickname);
+    },
+    {
+      manual: true,
+      onSuccess() {
+        message.success("注册成功");
+        nav(LOGIN_PATHNAME);
+      },
+    }
+  );
+
   function onFinish(values: any) {
-    console.log("values", values);
+    onRegister(values);
   }
   function onFinishFailed(errorInfo: any) {
     console.log("Failed:", errorInfo);
@@ -66,17 +84,17 @@ const Register: FC = () => {
           <Form.Item
             label="确认密码"
             name="confirm"
-            dependencies={['password']}
+            dependencies={["password"]}
             rules={[
               { required: true, message: "请输入你的密码" },
               ({ getFieldValue }) => ({
                 validator(_, value) {
-                  if (!value || getFieldValue('password') === value) {
-                    return Promise.resolve()
+                  if (!value || getFieldValue("password") === value) {
+                    return Promise.resolve();
                   } else {
-                    return Promise.reject(new Error('两次密码不一致'))
+                    return Promise.reject(new Error("两次密码不一致"));
                   }
-                }
+                },
               }),
             ]}
           >
